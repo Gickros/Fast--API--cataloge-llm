@@ -1,58 +1,88 @@
-from fastapi import FastAPI, HTTPException
+from contextlib import asynccontextmanager
 
-from schemas import BookPatch
+from fastapi import FastAPI, HTTPException, status, Depends
+from sqlalchemy.orm import Session
 
-app = FastAPI()
+from data import books
+from database import SessionLocal
+from database import engine
+from model import Base, Books
+from schemas import Book, BookPatch, BookCreate
 
 
-@app.get('/books')
-def book_list() -> list[BookSchema]:
-    return books
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    Base.metadata.create_all(bind=engine)
+
+    yield
 
 
-@app.get('/books/{book_id}')
-def get_book(book_id: int):
+app = FastAPI(lifespan=lifespan)
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+@app.get('/')
+def check_books(db: Session = Depends(get_db)):
+    db = db
+    books_ = db.query(Books).all()
+    return books_
+
+
+@app.get('/{book_id}')
+def check_book(book_id: int) -> Book:
     for book in books:
         if book.id == book_id:
             return book
-    raise HTTPException(status_code=404, detail='book not found')
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
 
 
-@app.post('/books')
-def create_book(book: BookSchema):
-    books.append(book)
-    return book
-
-
-@app.delete('/book/{book_id}')
-def delete_book(book_id: int):
+@app.put('/{book_id}')
+def rewrite_book(book_id: int, book_data: BookCreate) -> Book:
     for book in books:
         if book.id == book_id:
-            books.remove(book.id)
-            return {'message': 'Book deleted'}
-    raise HTTPException(status_code=404, detail='book not found')
-
-
-@app.put('/books/{book_id}')
-def edit_book(book_id: int, new_book: BookSchema):
-    for index, book in enumerate(books):
-        if book.id == book_id:
-            new_book == book
-            return new_book
-    raise HTTPException(status_code=404, detail='book not found')
-
-
-@app.patch('/books/{book_id}')
-def patch_book(book_id: int, data: BookPatch):
-    for book in books:
-        if book.id == book_id:
-            if data.title is not None:
-                book.title = data.title
-            if data.price is not None:
-                book.price = data.price
-            if data.description is not None:
-                book.description = data.description
-            if data.author is not None:
-                book.author = data.author
+            book.title = book_data.title
+            book.author = book_data.author
+            book.description = book_data.description
+            book.price = book_data.price
             return book
-    raise HTTPException(status_code=404, detail='book not found')
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
+
+
+@app.delete('/{book_id}')
+def delete_book(book_id: int) -> str:
+    for book in books:
+        if book.id == book_id:
+            books.remove(book)
+            return 'book deleted'
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
+
+
+@app.patch('/{book_id}')
+def patch_book(book_id: int, book_data: BookPatch) -> Book:
+    for book in books:
+        if book.id == book_id:
+            if book_data.title is not None:
+                book.title = book_data.title
+            if book_data.author is not None:
+                book.author = book_data.author
+            if book_data.description is not None:
+                book.description = book_data.description
+            if book_data.price is not None:
+                book.price = book_data.price
+            return book
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
+
+
+@app.post('/create/')
+def create_book(book: BookCreate) -> Book:
+    new_book = Book(id=len(books) + 1, title=book.title, description=book.description, price=book.price,
+                    author=book.author)
+    books.append(new_book)
+    return new_book

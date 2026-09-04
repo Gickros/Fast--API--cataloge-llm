@@ -19,5 +19,5 @@ class BookCreate(BaseModel):
 class BookPatch(BaseModel):
     title: str | None = None
     description: str | None = None
-    price: int | None = None
+    price: float | None = None
     author: str | None = None
