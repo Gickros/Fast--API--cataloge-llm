@@ -19,4 +19,3 @@ class Books(Base):
     author: Mapped[str]
     price: Mapped[Decimal] = mapped_column(Numeric=(10, 2))
     description: Mapped[str | None] = mapped_column(nullable=True, default=None)
-    genre: Mapped[str | None] = mapped_column(nullable=True, default=None)

@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, status, Depends
 from sqlalchemy.orm import Session
@@ -82,7 +83,7 @@ def patch_book(book_id: int, book_data: BookPatch) -> Book:
 
 @app.post('/create/')
 def create_book(book: BookCreate) -> Book:
-    new_book = Book(id=len(books) + 1, title=book.title, description=book.description, price=book.price,
+    new_book = Book(id=uuid4(), title=book.title, description=book.description, price=book.price,
                     author=book.author)
     books.append(new_book)
     return new_book

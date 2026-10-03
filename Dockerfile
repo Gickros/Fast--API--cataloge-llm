@@ -1,6 +1,6 @@
 FROM python:3.13-alpine
 WORKDIR /Fast--API--cataloge-llm
-COPY requirements.txt .
+COPY requirments.txt .
 RUN pip install --no-cache-dir -r requirments.txt
 
 COPY . .
