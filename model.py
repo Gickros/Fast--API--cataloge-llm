@@ -1,6 +1,7 @@
 import uuid
 from decimal import Decimal
 
+from sqlalchemy import Numeric
 from sqlalchemy import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -17,5 +18,5 @@ class Books(Base):
     __tablename__ = 'Books'
     title: Mapped[str]
     author: Mapped[str]
-    price: Mapped[Decimal] = mapped_column(Numeric=(10, 2))
+    price: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     description: Mapped[str | None] = mapped_column(nullable=True, default=None)
